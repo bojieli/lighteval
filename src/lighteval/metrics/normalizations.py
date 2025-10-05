@@ -391,27 +391,17 @@ def gsm8k_normalizer(text: str) -> str:
     INVALID_ANS = "[invalid]"
     
     # Try to extract from \\boxed{} format first (for reasoning models like Intuitor)
-    # Pattern 1: \(\boxed{number}\) - LaTeX inline math with boxed
-    boxed_inline_match = re.search(r'\\\(\\boxed\{([^}]+)\}\\\)', text)
-    if boxed_inline_match:
-        match_str = boxed_inline_match.group(1).strip()
+    # This pattern matches both \boxed{number} and \(\boxed{number}\)
+    boxed_match = re.search(r'\\boxed\{([^}]+)\}', text)
+    if boxed_match:
+        match_str = boxed_match.group(1).strip()
         match_str = match_str.replace(",", "")
         # Extract only the number part (remove any non-numeric trailing text)
         number_match = re.search(r'-?[0-9\.\,]+', match_str)
         if number_match:
             return number_match.group(0).replace(",", "")
     
-    # Pattern 2: \boxed{number} - LaTeX boxed without inline delimiters
-    boxed_match = re.search(r'\\boxed\{([^}]+)\}', text)
-    if boxed_match:
-        match_str = boxed_match.group(1).strip()
-        match_str = match_str.replace(",", "")
-        # Extract only the number part
-        number_match = re.search(r'-?[0-9\.\,]+', match_str)
-        if number_match:
-            return number_match.group(0).replace(",", "")
-    
-    # Pattern 3: Original #### format (for standard GSM8K format)
+    # Original #### format (for standard GSM8K format)
     ans_re = re.compile(r"#### (\-?[0-9\.\,]+)")
     match = ans_re.search(text)
     if match:
