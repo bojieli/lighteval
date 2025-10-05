@@ -8579,7 +8579,7 @@ gsm8k_leaderboard = LightevalTaskConfig(
     evaluation_splits=["test"],
     few_shots_split=None,
     few_shots_select="random_sampling_from_train",
-    generation_size=256,
+    generation_size=2048,  # Increased from 256 to 2048 for reasoning models like Intuitor
     metrics=[
         Metrics.exact_match(sample_params={"normalize_gold": gsm8k_normalizer, "normalize_pred": gsm8k_normalizer})
     ],
@@ -8596,7 +8596,7 @@ gsm8k_lighteval = LightevalTaskConfig(
     evaluation_splits=["test"],
     few_shots_split=None,
     few_shots_select="random_sampling_from_train",
-    generation_size=256,
+    generation_size=2048,  # Increased from 256 to 2048 for reasoning models like Intuitor
     metrics=[
         Metrics.expr_gold_metric,
     ],

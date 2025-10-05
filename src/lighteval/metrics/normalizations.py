@@ -378,6 +378,8 @@ def math_normalizer(text: str) -> str:  # noqa C901
 
 def gsm8k_normalizer(text: str) -> str:
     """From https://github.com/openai/grade-school-math/blob/3101c7d5072418e28b9008a6636bde82a006892c/grade_school_math/dataset.py#L28
+    
+    Extended to support \\boxed{} format commonly used by reasoning models.
 
     Args:
         text (str): input text
@@ -386,16 +388,39 @@ def gsm8k_normalizer(text: str) -> str:
         str: Output text, either the number found in the text or "[invalid]" if
         no number was found
     """
-    ANS_RE = re.compile(r"#### (\-?[0-9\.\,]+)")
     INVALID_ANS = "[invalid]"
-
-    match = ANS_RE.search(text)
+    
+    # Try to extract from \\boxed{} format first (for reasoning models like Intuitor)
+    # Pattern 1: \(\boxed{number}\) - LaTeX inline math with boxed
+    boxed_inline_match = re.search(r'\\\(\\boxed\{([^}]+)\}\\\)', text)
+    if boxed_inline_match:
+        match_str = boxed_inline_match.group(1).strip()
+        match_str = match_str.replace(",", "")
+        # Extract only the number part (remove any non-numeric trailing text)
+        number_match = re.search(r'-?[0-9\.\,]+', match_str)
+        if number_match:
+            return number_match.group(0).replace(",", "")
+    
+    # Pattern 2: \boxed{number} - LaTeX boxed without inline delimiters
+    boxed_match = re.search(r'\\boxed\{([^}]+)\}', text)
+    if boxed_match:
+        match_str = boxed_match.group(1).strip()
+        match_str = match_str.replace(",", "")
+        # Extract only the number part
+        number_match = re.search(r'-?[0-9\.\,]+', match_str)
+        if number_match:
+            return number_match.group(0).replace(",", "")
+    
+    # Pattern 3: Original #### format (for standard GSM8K format)
+    ans_re = re.compile(r"#### (\-?[0-9\.\,]+)")
+    match = ans_re.search(text)
     if match:
         match_str = match.group(1).strip()
         match_str = match_str.replace(",", "")
         return match_str
-    else:
-        return INVALID_ANS
+    
+    # If no pattern matched, return invalid
+    return INVALID_ANS
 
 
 PUNCT = {chr(i) for i in range(sys.maxunicode) if unicodedata.category(chr(i)).startswith("P")}.union(
